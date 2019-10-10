@@ -1,0 +1,9 @@
+az login
+
+az account set --subscription "AzureTraining"
+
+az group show -h-subscription
+
+az group deployment create --subcription  "AzureTraining" --resource-group "MDW-Lab"  --template-file "F:\\Source Control\\MDW-Lab\\Deploy\\azuredeploy.json"
+
+
