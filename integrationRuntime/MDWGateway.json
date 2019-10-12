@@ -1,0 +1,7 @@
+{
+	"name": "MDWGateway",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "Gateway for MDW Lab session - Modern Data Warehouse Gateway"
+	}
+}
