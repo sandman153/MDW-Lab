@@ -5,6 +5,9 @@
 		"factoryName": {
 			"value": "MDWDataFactory-53a5g"
 		},
+		"MDWDataLake_connectionString": {
+			"value": ""
+		},
 		"MDWSQLServer_NYCDataSets_connectionString": {
 			"value": ""
 		},
@@ -12,9 +15,6 @@
 			"value": ""
 		},
 		"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
-			"value": ""
-		},
-		"MDWDataLake_connectionString": {
 			"value": ""
 		},
 		"MDWSQLServer_NYCDataSets_properties_typeProperties_userName": {

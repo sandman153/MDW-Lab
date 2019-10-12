@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "MDWDataFactory-53a5g"
 		},
+		"MDWDataLake_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MDWDataLake'"
+		},
 		"MDWSQLServer_NYCDataSets_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MDWSQLServer_NYCDataSets'"
@@ -18,10 +22,6 @@
 		"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MDWSQLVirtualServer_MDWASQLDW'"
-		},
-		"MDWDataLake_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MDWDataLake'"
 		},
 		"MDWSQLServer_NYCDataSets_properties_typeProperties_userName": {
 			"type": "string",
@@ -54,11 +54,11 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
-					"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
-						"value": "[parameters('MDWSQLVirtualServer_MDWASQLDW_connectionString')]"
-					},
 					"MDWDataLake_connectionString": {
 						"value": "[parameters('MDWDataLake_connectionString')]"
+					},
+					"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
+						"value": "[parameters('MDWSQLVirtualServer_MDWASQLDW_connectionString')]"
 					},
 					"MDWSQLServer_NYCDataSets_connectionString": {
 						"value": "[parameters('MDWSQLServer_NYCDataSets_connectionString')]"

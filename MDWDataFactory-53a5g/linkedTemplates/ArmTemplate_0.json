@@ -7,13 +7,13 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "MDWDataFactory-53a5g"
 		},
-		"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MDWSQLVirtualServer_MDWASQLDW'"
-		},
 		"MDWDataLake_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MDWDataLake'"
+		},
+		"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MDWSQLVirtualServer_MDWASQLDW'"
 		},
 		"MDWSQLServer_NYCDataSets_connectionString": {
 			"type": "secureString",
@@ -33,13 +33,15 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/MDWGateway')]",
-			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"name": "[concat(parameters('factoryName'), '/MDWDataLake')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"type": "SelfHosted",
-				"description": "Gateway for MDW Lab session - Modern Data Warehouse Gateway",
-				"typeProperties": {}
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('MDWDataLake_connectionString')]"
+				}
 			},
 			"dependsOn": []
 		},
@@ -57,41 +59,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/MDWDataLake')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"name": "[concat(parameters('factoryName'), '/MDWGateway')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"connectionString": "[parameters('MDWDataLake_connectionString')]"
-				}
+				"type": "SelfHosted",
+				"description": "Gateway for MDW Lab session - Modern Data Warehouse Gateway",
+				"typeProperties": {}
 			},
 			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWSQLServer_NYCDataSets')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "SqlServer",
-				"typeProperties": {
-					"connectionString": "[parameters('MDWSQLServer_NYCDataSets_connectionString')]",
-					"userName": "[parameters('MDWSQLServer_NYCDataSets_properties_typeProperties_userName')]",
-					"password": {
-						"type": "SecureString",
-						"value": "[parameters('MDWSQLServer_NYCDataSets_password')]"
-					}
-				},
-				"connectVia": {
-					"referenceName": "MDWGateway",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/MDWGateway')]"
-			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_MotorVehicleCollisions')]",
@@ -261,6 +237,30 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/MDWSQLServer_NYCDataSets')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "SqlServer",
+				"typeProperties": {
+					"connectionString": "[parameters('MDWSQLServer_NYCDataSets_connectionString')]",
+					"userName": "[parameters('MDWSQLServer_NYCDataSets_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('MDWSQLServer_NYCDataSets_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "MDWGateway",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/MDWGateway')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/NYCDataSets_MotorVehicleCollisions')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -425,6 +425,70 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/MDWSQLServer_NYCDataSets')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Copy Relational Data')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyMotorVehicleCollisions",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource"
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"allowPolyBase": true,
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								}
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "MDWDataLake",
+									"type": "LinkedServiceReference"
+								},
+								"path": "polybase"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "NYCDataSets_MotorVehicleCollisions",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWASQLDW_MotorVehicleCollisions",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NYCDataSets_MotorVehicleCollisions')]",
+				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_MotorVehicleCollisions')]",
+				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
 			]
 		}
 	]
