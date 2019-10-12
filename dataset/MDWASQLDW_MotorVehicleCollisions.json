@@ -1,0 +1,162 @@
+{
+	"name": "MDWASQLDW_MotorVehicleCollisions",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [
+			{
+				"name": "UniqueKey",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CollisionDate",
+				"type": "date"
+			},
+			{
+				"name": "CollisionDayOfWeek",
+				"type": "varchar"
+			},
+			{
+				"name": "CollisionTime",
+				"type": "time",
+				"scale": 7
+			},
+			{
+				"name": "CollisionTimeAMPM",
+				"type": "varchar"
+			},
+			{
+				"name": "CollisionTimeBin",
+				"type": "varchar"
+			},
+			{
+				"name": "Borough",
+				"type": "varchar"
+			},
+			{
+				"name": "ZipCode",
+				"type": "varchar"
+			},
+			{
+				"name": "Latitude",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "Longitude",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "Location",
+				"type": "varchar"
+			},
+			{
+				"name": "OnStreetName",
+				"type": "varchar"
+			},
+			{
+				"name": "CrossStreetName",
+				"type": "varchar"
+			},
+			{
+				"name": "OffStreetName",
+				"type": "varchar"
+			},
+			{
+				"name": "NumberPersonsInjured",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberPersonsKilled",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "IsFatalCollision",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberPedestriansInjured",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberPedestriansKilled",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberCyclistInjured",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberCyclistKilled",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberMotoristInjured",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NumberMotoristKilled",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ContributingFactorVehicle1",
+				"type": "varchar"
+			},
+			{
+				"name": "ContributingFactorVehicle2",
+				"type": "varchar"
+			},
+			{
+				"name": "ContributingFactorVehicle3",
+				"type": "varchar"
+			},
+			{
+				"name": "ContributingFactorVehicle4",
+				"type": "varchar"
+			},
+			{
+				"name": "ContributingFactorVehicle5",
+				"type": "varchar"
+			},
+			{
+				"name": "VehicleTypeCode1",
+				"type": "varchar"
+			},
+			{
+				"name": "VehicleTypeCode2",
+				"type": "varchar"
+			},
+			{
+				"name": "VehicleTypeCode3",
+				"type": "varchar"
+			},
+			{
+				"name": "VehicleTypeCode4",
+				"type": "varchar"
+			},
+			{
+				"name": "VehicleTypeCode5",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "NYC",
+			"table": "NYPD_MotorVehicleCollisions"
+		}
+	}
+}
