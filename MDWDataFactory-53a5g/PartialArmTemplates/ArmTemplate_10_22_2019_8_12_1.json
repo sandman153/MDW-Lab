@@ -6,86 +6,12 @@
 			"type": "string",
 			"metadata": "Data Factory name",
 			"defaultValue": "MDWDataFactory-53a5g"
-		},
-		"MDWDataLake_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MDWDataLake'"
-		},
-		"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MDWSQLVirtualServer_MDWASQLDW'"
-		},
-		"MDWSQLServer_NYCDataSets_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'MDWSQLServer_NYCDataSets'"
-		},
-		"MDWSQLServer_NYCDataSets_password": {
-			"type": "secureString",
-			"metadata": "Secure string for 'password' of 'MDWSQLServer_NYCDataSets'"
-		},
-		"MDWResources_sasUri": {
-			"type": "secureString",
-			"metadata": "Secure string for 'sasUri' of 'MDWResources'"
-		},
-		"MDWSQLServer_NYCDataSets_properties_typeProperties_userName": {
-			"type": "string",
-			"defaultValue": "MDWAdmin"
 		}
 	},
 	"variables": {
 		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
 	},
 	"resources": [
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWDataLake')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"connectionString": "[parameters('MDWDataLake_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWResources')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"sasUri": "[parameters('MDWResources_sasUri')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWSQLVirtualServer_MDWASQLDW')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDW",
-				"typeProperties": {
-					"connectionString": "[parameters('MDWSQLVirtualServer_MDWASQLDW_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWGateway')]",
-			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "SelfHosted",
-				"description": "Gateway for MDW Lab session - Modern Data Warehouse Gateway",
-				"typeProperties": {}
-			},
-			"dependsOn": []
-		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_MotorVehicleCollisions')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
@@ -252,9 +178,7 @@
 					"table": "NYPD_MotorVehicleCollisions"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWSQLVirtualServer_MDWASQLDW')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_NYCTaxiDataSummary')]",
@@ -327,9 +251,7 @@
 					"table": "TaxiDataSummary"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWSQLVirtualServer_MDWASQLDW')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWDataLake_NYCTaxiData_Binary')]",
@@ -352,9 +274,7 @@
 					}
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWDataLake_NYCTaxiData_CSV')]",
@@ -455,9 +375,7 @@
 					}
 				]
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWResources_NYCTaxiData_Binary')]",
@@ -480,9 +398,7 @@
 					}
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWResources')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/MDWResources_NYCTaxiLookup_CSV')]",
@@ -510,57 +426,7 @@
 				},
 				"schema": []
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWResources')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWSQLServer_NYCDataSets')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "SqlServer",
-				"typeProperties": {
-					"connectionString": "[parameters('MDWSQLServer_NYCDataSets_connectionString')]",
-					"userName": "[parameters('MDWSQLServer_NYCDataSets_properties_typeProperties_userName')]",
-					"password": {
-						"type": "SecureString",
-						"value": "[parameters('MDWSQLServer_NYCDataSets_password')]"
-					}
-				},
-				"connectVia": {
-					"referenceName": "MDWGateway",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/MDWGateway')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_NYCTaxiLocationLookup')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "Lab 02"
-				},
-				"annotations": [],
-				"type": "AzureSqlDWTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "NYC",
-					"table": "TaxiLocationLookup"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWSQLVirtualServer_MDWASQLDW')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/NYCDataSets_MotorVehicleCollisions')]",
@@ -728,73 +594,29 @@
 					"table": "NYPD_MotorVehicleCollisions"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWSQLServer_NYCDataSets')]"
-			]
+			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/Copy Relational Data')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
+			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_NYCTaxiLocationLookup')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"activities": [
-					{
-						"name": "CopyMotorVehicleCollisions",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlServerSource"
-							},
-							"sink": {
-								"type": "SqlDWSink",
-								"allowPolyBase": true,
-								"polyBaseSettings": {
-									"rejectValue": 0,
-									"rejectType": "value",
-									"useTypeDefault": true
-								}
-							},
-							"enableStaging": true,
-							"stagingSettings": {
-								"linkedServiceName": {
-									"referenceName": "MDWDataLake",
-									"type": "LinkedServiceReference"
-								},
-								"path": "polybase"
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "NYCDataSets_MotorVehicleCollisions",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "MDWASQLDW_MotorVehicleCollisions",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					}
-				],
-				"annotations": []
+				"linkedServiceName": {
+					"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 02"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "NYC",
+					"table": "TaxiLocationLookup"
+				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/NYCDataSets_MotorVehicleCollisions')]",
-				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_MotorVehicleCollisions')]",
-				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
-			]
+			"dependsOn": []
 		}
 	]
 }

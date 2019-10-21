@@ -23,6 +23,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MDWSQLVirtualServer_MDWASQLDW'"
 		},
+		"MDWResources_sasUri": {
+			"type": "secureString",
+			"metadata": "Secure string for 'sasUri' of 'MDWResources'"
+		},
 		"MDWSQLServer_NYCDataSets_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "MDWAdmin"
@@ -65,6 +69,9 @@
 					},
 					"MDWSQLServer_NYCDataSets_password": {
 						"value": "[parameters('MDWSQLServer_NYCDataSets_password')]"
+					},
+					"MDWResources_sasUri": {
+						"value": "[parameters('MDWResources_sasUri')]"
 					},
 					"MDWSQLServer_NYCDataSets_properties_typeProperties_userName": {
 						"value": "[parameters('MDWSQLServer_NYCDataSets_properties_typeProperties_userName')]"

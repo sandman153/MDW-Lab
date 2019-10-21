@@ -17,6 +17,9 @@
 		"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
 			"value": ""
 		},
+		"MDWResources_sasUri": {
+			"value": ""
+		},
 		"MDWSQLServer_NYCDataSets_properties_typeProperties_userName": {
 			"value": "MDWAdmin"
 		},
