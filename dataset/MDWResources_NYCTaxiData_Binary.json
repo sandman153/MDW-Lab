@@ -5,6 +5,9 @@
 			"referenceName": "MDWResources",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab 02"
+		},
 		"annotations": [],
 		"type": "Binary",
 		"typeProperties": {

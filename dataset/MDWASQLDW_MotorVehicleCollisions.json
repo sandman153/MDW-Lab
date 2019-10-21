@@ -5,6 +5,9 @@
 			"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab 01"
+		},
 		"annotations": [],
 		"type": "AzureSqlDWTable",
 		"schema": [

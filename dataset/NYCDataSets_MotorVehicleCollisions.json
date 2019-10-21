@@ -5,6 +5,9 @@
 			"referenceName": "MDWSQLServer_NYCDataSets",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab 01"
+		},
 		"annotations": [],
 		"type": "SqlServerTable",
 		"schema": [
