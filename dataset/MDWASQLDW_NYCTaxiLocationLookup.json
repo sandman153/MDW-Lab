@@ -1,0 +1,16 @@
+{
+	"name": "MDWASQLDW_NYCTaxiLocationLookup",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "NYC",
+			"table": "TaxiLocationLookup"
+		}
+	}
+}
