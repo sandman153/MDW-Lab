@@ -87,6 +87,25 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/MappingDataFlowsIR')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 10
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_MotorVehicleCollisions')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -332,6 +351,48 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_NYCTaxiLocationLookup')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 02"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "LocationID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Borough",
+						"type": "varchar"
+					},
+					{
+						"name": "Zone",
+						"type": "varchar"
+					},
+					{
+						"name": "service_zone",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "NYC",
+					"table": "TaxiLocationLookup"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MDWSQLVirtualServer_MDWASQLDW')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/MDWDataLake_NYCTaxiData_Binary')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -539,30 +600,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/MDWASQLDW_NYCTaxiLocationLookup')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "MDWSQLVirtualServer_MDWASQLDW",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "Lab 02"
-				},
-				"annotations": [],
-				"type": "AzureSqlDWTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "NYC",
-					"table": "TaxiLocationLookup"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWSQLVirtualServer_MDWASQLDW')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/NYCDataSets_MotorVehicleCollisions')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -733,6 +770,63 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/TransformNYCTaxiData')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "MDWDataLake_NYCTaxiData_CSV",
+								"type": "DatasetReference"
+							},
+							"name": "TaxiDataFiles",
+							"typeProperties": {}
+						},
+						{
+							"dataset": {
+								"referenceName": "MDWASQLDW_NYCTaxiLocationLookup",
+								"type": "DatasetReference"
+							},
+							"name": "TaxiLocationLookup",
+							"typeProperties": {}
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "MDWASQLDW_NYCTaxiDataSummary",
+								"type": "DatasetReference"
+							},
+							"name": "TaxiDataSummary"
+						}
+					],
+					"transformations": [
+						{
+							"name": "TransformColumns"
+						},
+						{
+							"name": "JoinPickUpLocation"
+						},
+						{
+							"name": "AggregateDailySummary"
+						},
+						{
+							"name": "RenameColumns"
+						}
+					],
+					"script": "\n\nsource(output(\n\t\tVendorID as string,\n\t\ttpep_pickup_datetime as string,\n\t\ttpep_dropoff_datetime as string,\n\t\tpassenger_count as string,\n\t\ttrip_distance as string,\n\t\tRatecodeID as string,\n\t\tstore_and_fwd_flag as string,\n\t\tPULocationID as string,\n\t\tDOLocationID as string,\n\t\tpayment_type as string,\n\t\tfare_amount as string,\n\t\textra as string,\n\t\tmta_tax as string,\n\t\ttip_amount as string,\n\t\ttolls_amount as string,\n\t\timprovement_surcharge as string,\n\t\ttotal_amount as string,\n\t\tcongestion_surcharge as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false) ~> TaxiDataFiles\nsource(output(\n\t\tLocationID as integer,\n\t\tBorough as string,\n\t\tZone as string,\n\t\tservice_zone as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table',\n\tstaged: false) ~> TaxiLocationLookup\nTaxiDataFiles derive(PaymentType = case (payment_type == '1', 'Credit card'\r\n    , payment_type == '2', 'Cash'\r\n    , payment_type == '3', 'No charge'\r\n    , payment_type == '4', 'Dispute'\r\n    , payment_type == '5', 'Unknown'\r\n    , payment_type == '6', 'Voided trip'),\n\t\tPickUpDate = toDate(tpep_pickup_datetime,'yyyy-MM-dd'),\n\t\tPickUpLocationID = toInteger(PULocationID),\n\t\tPassengerCount = toInteger(passenger_count),\n\t\tDistanceTravelled = toDecimal(trip_distance),\n\t\tTipAmount = toDecimal(tip_amount),\n\t\tFareAmount = toDecimal(fare_amount),\n\t\tTotalAmount = toDecimal(total_amount)) ~> TransformColumns\nTransformColumns, TaxiLocationLookup join(PickUpLocationID == LocationID,\n\tjoinType:'inner',\n\tbroadcast: 'none')~> JoinPickUpLocation\nJoinPickUpLocation aggregate(groupBy(PickUpDate,\n\t\tPaymentType,\n\t\tBorough,\n\t\tZone),\n\tTotalTripCount = count(),\n\t\tTotalPassengerCount = sum(PassengerCount),\n\t\tTotalDistanceTravelled = sum(DistanceTravelled),\n\t\tTotalTipAmount = sum(TipAmount),\n\t\tTotalFareAmount = sum(FareAmount),\n\t\tTotalTripAmount = sum(TotalAmount)) ~> AggregateDailySummary\nAggregateDailySummary select(mapColumn(\n\t\tPickUpDate,\n\t\tPaymentType,\n\t\tPickUpBorough = Borough,\n\t\tPickUpZone = Zone,\n\t\tTotalTripCount,\n\t\tTotalPassengerCount,\n\t\tTotalDistanceTravelled,\n\t\tTotalTipAmount,\n\t\tTotalFareAmount,\n\t\tTotalTripAmount\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RenameColumns\nRenameColumns sink(input(\n\t\tPickUpDate as date,\n\t\tPickUpBorough as string,\n\t\tPickUpZone as string,\n\t\tPaymentType as string,\n\t\tTotalTripCount as integer,\n\t\tTotalPassengerCount as integer,\n\t\tTotalDistanceTravelled as decimal(38,2),\n\t\tTotalTipAmount as decimal(38,2),\n\t\tTotalFareAmount as decimal(38,2),\n\t\tTotalTripAmount as decimal(38,2)\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\ttruncate:true,\n\tformat: 'table',\n\tstaged: true) ~> TaxiDataSummary"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCTaxiData_CSV')]",
+				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiLocationLookup')]",
+				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiDataSummary')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Copy Relational Data')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -793,6 +887,177 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/NYCDataSets_MotorVehicleCollisions')]",
 				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_MotorVehicleCollisions')]",
+				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Lab 2 - Transform NYC Taxi Data')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy Taxi Data Files",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCTaxiData_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWDataLake_NYCTaxiData_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy Taxi Location Lookup",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.*"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"allowPolyBase": true,
+								"preCopyScript": "truncate table NYC.TaxiLocationLookup",
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								},
+								"disableMetricsCollection": false
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "MDWDataLake",
+									"type": "LinkedServiceReference"
+								},
+								"path": "polybase"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCTaxiLookup_CSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWASQLDW_NYCTaxiLocationLookup",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Transform NYC Taxi Data",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Copy Taxi Data Files",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Copy Taxi Location Lookup",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "TransformNYCTaxiData",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"TaxiDataFiles": {},
+									"TaxiLocationLookup": {},
+									"TaxiDataSummary": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "MDWDataLake",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "polybase"
+							},
+							"integrationRuntime": {
+								"referenceName": "MappingDataFlowsIR",
+								"type": "IntegrationRuntimeReference"
+							}
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCTaxiData_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCTaxiData_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCTaxiLookup_CSV')]",
+				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiLocationLookup')]",
+				"[concat(variables('factoryId'), '/dataflows/TransformNYCTaxiData')]",
+				"[concat(variables('factoryId'), '/integrationRuntimes/MappingDataFlowsIR')]",
 				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
 			]
 		}
