@@ -10,7 +10,25 @@
 		},
 		"annotations": [],
 		"type": "AzureSqlDWTable",
-		"schema": [],
+		"schema": [
+			{
+				"name": "LocationID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Borough",
+				"type": "varchar"
+			},
+			{
+				"name": "Zone",
+				"type": "varchar"
+			},
+			{
+				"name": "service_zone",
+				"type": "varchar"
+			}
+		],
 		"typeProperties": {
 			"schema": "NYC",
 			"table": "TaxiLocationLookup"
