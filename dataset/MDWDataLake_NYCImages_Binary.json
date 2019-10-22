@@ -1,0 +1,17 @@
+{
+	"name": "MDWDataLake_NYCImages_Binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MDWDataLake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "nycimages"
+			}
+		}
+	}
+}
