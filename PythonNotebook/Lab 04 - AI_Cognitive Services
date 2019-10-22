@@ -1,0 +1,84 @@
+# Databricks notebook source
+# DBTITLE 1,Define and retrieve NYC Image URL parameter
+dbutils.widgets.text("nycImageUrl", "", "Image URL")
+nycImageUrl = getArgument("nycImageUrl")
+
+# COMMAND ----------
+
+# DBTITLE 1,Define function to invoke Computer Vision API
+import requests
+import json
+
+def GetNYCImageMetadata(imageUrl):
+  # Replace <MDWComputerVision Subscription Key> with your valid subscription key.
+  subscription_key = "e71f34b6cda14a6ca5f8e9e6a5af7f49"
+  
+  #Replace <MDWComputerVision Base URL> with your valid Computer Vision API base url
+  vision_base_url = "https://australiaeast.api.cognitive.microsoft.com/" #It should look like this one: https://australiaeast.api.cognitive.microsoft.com/
+  analyze_url = vision_base_url + "vision/v2.0/analyze"
+  
+  #Populate require request information
+  headers = {'Ocp-Apim-Subscription-Key': subscription_key}
+  params  = {'visualFeatures': 'Categories,Description,Color,Brands,Tags,Objects', 'details':'Landmarks,Celebrities'}
+  data    = {'url': imageUrl}
+  
+  #Submit Computer Vision request for given image url
+  response = requests.post(analyze_url, headers=headers, params=params, json=data)
+  response.raise_for_status()
+
+  # The 'analysis' object contains various fields that describe the image. The most
+  # relevant caption for the image is obtained from the 'description' property.
+  analysis = response.json()
+  return json.dumps(analysis).replace('"requestId"','"imageUrl":"' + imageUrl + '","requestId"')
+
+# COMMAND ----------
+
+# DBTITLE 1,Define function to mount NYC Image Metadata Container
+def MountImageMetadataContainer():
+  # Replace <MDWDataLake storage account name> with your valid storage account name
+  datalakeAccountName = '<MDWDataLake storage account name>'
+  
+  # Replace <MDWDataLake storage account key> with your valid storage account name
+  datalakeAccountKey = '<MDWDataLake storage account key>'
+  
+  dataLakeConf = "fs.azure.account.key." + datalakeAccountName + ".blob.core.windows.net"
+  dataLakeExtraConfig = {dataLakeConf:datalakeAccountKey}
+  imageMetadataConainerUrl = "wasbs://nycimagemetadata@" + datalakeAccountName + ".blob.core.windows.net"
+  imageMetadataMountpoint = "/mnt/NYCImageMetadata"
+
+  try:
+    dbutils.fs.mount(
+    source = imageMetadataConainerUrl,
+    mount_point = imageMetadataMountpoint,
+    extra_configs = dataLakeExtraConfig)
+  except Exception as e:
+    if "Directory already mounted" in str(e):
+      pass # Ignore error if already mounted.
+    else:
+      raise e
+  return imageMetadataMountpoint
+  
+
+# COMMAND ----------
+
+# DBTITLE 1,Define function to save image metadata file
+def SaveImageMetadataFile(imageMetadata, fileName):
+  metadataMountpoint = MountImageMetadataContainer()
+  outputFilePath = metadataMountpoint + '/' + fileName
+  dbutils.fs.put(outputFilePath, imageMetadata, overwrite=True)
+  print(outputFilePath + ' file saved.')
+
+# COMMAND ----------
+
+# DBTITLE 1,Invoke Computer Vision and Save Metadata File
+from urllib.parse import urlparse
+#invoke Computer Vision API to retrieve image metadata
+jsonImageMetadata = GetNYCImageMetadata(nycImageUrl)
+
+#Generate filename for image metadata file.
+filePath = urlparse(nycImageUrl)[2]
+filePathParts = filePath.split('/')
+fileName = filePathParts[len(filePathParts)-1] + '.json'
+
+#Save image metadata file in the NYCImageMetadata container
+SaveImageMetadataFile(jsonImageMetadata, fileName)
