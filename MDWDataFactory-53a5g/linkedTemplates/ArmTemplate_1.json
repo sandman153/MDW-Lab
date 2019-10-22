@@ -13,6 +13,174 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/NYCDataSets_MotorVehicleCollisions')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MDWSQLServer_NYCDataSets",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 01"
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [
+					{
+						"name": "UniqueKey",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CollisionDate",
+						"type": "date"
+					},
+					{
+						"name": "CollisionDayOfWeek",
+						"type": "varchar"
+					},
+					{
+						"name": "CollisionTime",
+						"type": "time",
+						"scale": 7
+					},
+					{
+						"name": "CollisionTimeAMPM",
+						"type": "varchar"
+					},
+					{
+						"name": "CollisionTimeBin",
+						"type": "varchar"
+					},
+					{
+						"name": "Borough",
+						"type": "varchar"
+					},
+					{
+						"name": "ZipCode",
+						"type": "varchar"
+					},
+					{
+						"name": "Latitude",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "Longitude",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "Location",
+						"type": "varchar"
+					},
+					{
+						"name": "OnStreetName",
+						"type": "varchar"
+					},
+					{
+						"name": "CrossStreetName",
+						"type": "varchar"
+					},
+					{
+						"name": "OffStreetName",
+						"type": "varchar"
+					},
+					{
+						"name": "NumberPersonsInjured",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberPersonsKilled",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "IsFatalCollision",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberPedestriansInjured",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberPedestriansKilled",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberCyclistInjured",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberCyclistKilled",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberMotoristInjured",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NumberMotoristKilled",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ContributingFactorVehicle1",
+						"type": "varchar"
+					},
+					{
+						"name": "ContributingFactorVehicle2",
+						"type": "varchar"
+					},
+					{
+						"name": "ContributingFactorVehicle3",
+						"type": "varchar"
+					},
+					{
+						"name": "ContributingFactorVehicle4",
+						"type": "varchar"
+					},
+					{
+						"name": "ContributingFactorVehicle5",
+						"type": "varchar"
+					},
+					{
+						"name": "VehicleTypeCode1",
+						"type": "varchar"
+					},
+					{
+						"name": "VehicleTypeCode2",
+						"type": "varchar"
+					},
+					{
+						"name": "VehicleTypeCode3",
+						"type": "varchar"
+					},
+					{
+						"name": "VehicleTypeCode4",
+						"type": "varchar"
+					},
+					{
+						"name": "VehicleTypeCode5",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "NYC",
+					"table": "NYPD_MotorVehicleCollisions"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/TransformNYCTaxiData')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -66,7 +234,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/Copy Relational Data')]",
+			"name": "[concat(parameters('factoryName'), '/Lab 01 - Copy Relational Data')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -123,7 +291,9 @@
 				],
 				"annotations": []
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/NYCDataSets_MotorVehicleCollisions')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/Lab 2 - Transform NYC Taxi Data')]",

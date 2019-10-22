@@ -738,173 +738,200 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/NYCDataSets_MotorVehicleCollisions')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
+			"name": "[concat(parameters('factoryName'), '/Lab4 - Copy NYC Images')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"linkedServiceName": {
-					"referenceName": "MDWSQLServer_NYCDataSets",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "Lab 01"
-				},
-				"annotations": [],
-				"type": "SqlServerTable",
-				"schema": [
+				"activities": [
 					{
-						"name": "UniqueKey",
-						"type": "int",
-						"precision": 10
+						"name": "CopyImageFiles",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCImages_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWDataLake_NYCImages_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
 					},
 					{
-						"name": "CollisionDate",
-						"type": "date"
+						"name": "GetImageFileList",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "CopyImageFiles",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "MDWDataLake_NYCImages_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true
+							}
+						}
 					},
 					{
-						"name": "CollisionDayOfWeek",
-						"type": "varchar"
+						"name": "ForEachImage",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetImageFileList",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetImageFileList').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "GetImageMetadata",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": "/Users/boppudsara@gmail.com/NYCImageMetadata-Lab",
+										"baseParameters": {
+											"nycImageUrl": {
+												"value": "@concat(variables('ImageMetadataContainerUrl'), item().name)",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "MDWDatabricks",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						}
 					},
 					{
-						"name": "CollisionTime",
-						"type": "time",
-						"scale": 7
-					},
-					{
-						"name": "CollisionTimeAMPM",
-						"type": "varchar"
-					},
-					{
-						"name": "CollisionTimeBin",
-						"type": "varchar"
-					},
-					{
-						"name": "Borough",
-						"type": "varchar"
-					},
-					{
-						"name": "ZipCode",
-						"type": "varchar"
-					},
-					{
-						"name": "Latitude",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "Longitude",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "Location",
-						"type": "varchar"
-					},
-					{
-						"name": "OnStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "CrossStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "OffStreetName",
-						"type": "varchar"
-					},
-					{
-						"name": "NumberPersonsInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPersonsKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "IsFatalCollision",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPedestriansInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberPedestriansKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberCyclistInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberCyclistKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberMotoristInjured",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NumberMotoristKilled",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "ContributingFactorVehicle1",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle2",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle3",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle4",
-						"type": "varchar"
-					},
-					{
-						"name": "ContributingFactorVehicle5",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode1",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode2",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode3",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode4",
-						"type": "varchar"
-					},
-					{
-						"name": "VehicleTypeCode5",
-						"type": "varchar"
+						"name": "ServeImageMetadata",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "ForEachImage",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.json"
+								}
+							},
+							"sink": {
+								"type": "CosmosDbSqlApiSink",
+								"writeBehavior": "insert"
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWDataLake_NYCImageMetadata_JSON",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWCosmosDB_NYCImageMetadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
 					}
 				],
-				"typeProperties": {
-					"schema": "NYC",
-					"table": "NYPD_MotorVehicleCollisions"
-				}
+				"variables": {
+					"ImageMetadataContainerUrl": {
+						"type": "String",
+						"defaultValue": "https://mdwdatalake53a5g.blob.core.windows.net/nycimages/"
+					}
+				},
+				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/MDWSQLServer_NYCDataSets')]"
+				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCImages_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCImages_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCImageMetadata_JSON')]",
+				"[concat(variables('factoryId'), '/datasets/MDWCosmosDB_NYCImageMetadata')]",
+				"[concat(variables('factoryId'), '/linkedServices/MDWDatabricks')]"
 			]
 		}
 	]

@@ -45,7 +45,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/Copy Relational Data')]",
+			"name": "[concat(parameters('factoryName'), '/Lab 01 - Copy Relational Data')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -277,6 +277,203 @@
 				"[concat(variables('factoryId'), '/dataflows/TransformNYCTaxiData')]",
 				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]",
 				"[concat(variables('factoryId'), '/integrationRuntimes/MappingDataFlowsIR')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Lab4 - Copy NYC Images')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyImageFiles",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCImages_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWDataLake_NYCImages_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "GetImageFileList",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "CopyImageFiles",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "MDWDataLake_NYCImages_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true
+							}
+						}
+					},
+					{
+						"name": "ForEachImage",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetImageFileList",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetImageFileList').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "GetImageMetadata",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": "/Users/boppudsara@gmail.com/NYCImageMetadata-Lab",
+										"baseParameters": {
+											"nycImageUrl": {
+												"value": "@concat(variables('ImageMetadataContainerUrl'), item().name)",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "MDWDatabricks",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "ServeImageMetadata",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "ForEachImage",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.json"
+								}
+							},
+							"sink": {
+								"type": "CosmosDbSqlApiSink",
+								"writeBehavior": "insert"
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWDataLake_NYCImageMetadata_JSON",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWCosmosDB_NYCImageMetadata",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"variables": {
+					"ImageMetadataContainerUrl": {
+						"type": "String",
+						"defaultValue": "https://mdwdatalake53a5g.blob.core.windows.net/nycimages/"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCImages_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCImages_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCImageMetadata_JSON')]",
+				"[concat(variables('factoryId'), '/datasets/MDWCosmosDB_NYCImageMetadata')]",
+				"[concat(variables('factoryId'), '/linkedServices/MDWDatabricks')]"
 			]
 		},
 		{

@@ -1,0 +1,260 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "MDWDataFactory-53a5g"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Lab 01 - Copy Relational Data')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyMotorVehicleCollisions",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource"
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"allowPolyBase": true,
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								}
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "MDWDataLake",
+									"type": "LinkedServiceReference"
+								},
+								"path": "polybase"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "NYCDataSets_MotorVehicleCollisions",
+								"type": "DatasetReference"
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWASQLDW_MotorVehicleCollisions",
+								"type": "DatasetReference"
+							}
+						]
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Lab4 - Copy NYC Images')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyImageFiles",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCImages_Binary",
+								"type": "DatasetReference"
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWDataLake_NYCImages_Binary",
+								"type": "DatasetReference"
+							}
+						]
+					},
+					{
+						"name": "GetImageFileList",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "CopyImageFiles",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "MDWDataLake_NYCImages_Binary",
+								"type": "DatasetReference"
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true
+							}
+						}
+					},
+					{
+						"name": "ForEachImage",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetImageFileList",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetImageFileList').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "GetImageMetadata",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": "/Users/boppudsara@gmail.com/NYCImageMetadata-Lab",
+										"baseParameters": {
+											"nycImageUrl": {
+												"value": "@concat(variables('ImageMetadataContainerUrl'), item().name)",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "MDWDatabricks",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "ServeImageMetadata",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "ForEachImage",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.json"
+								}
+							},
+							"sink": {
+								"type": "CosmosDbSqlApiSink",
+								"writeBehavior": "insert"
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWDataLake_NYCImageMetadata_JSON",
+								"type": "DatasetReference"
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWCosmosDB_NYCImageMetadata",
+								"type": "DatasetReference"
+							}
+						]
+					}
+				],
+				"variables": {
+					"ImageMetadataContainerUrl": {
+						"type": "String",
+						"defaultValue": "https://mdwdatalake53a5g.blob.core.windows.net/nycimages/"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		}
+	]
+}
