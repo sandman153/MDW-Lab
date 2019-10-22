@@ -1,0 +1,17 @@
+{
+	"name": "MDWResources_NYCImages_Binary",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MDWResources",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "nycimages"
+			}
+		}
+	}
+}
