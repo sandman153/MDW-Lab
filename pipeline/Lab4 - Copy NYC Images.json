@@ -120,6 +120,53 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "ServeImageMetadata",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "ForEachImage",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"wildcardFileName": "*.json"
+						}
+					},
+					"sink": {
+						"type": "CosmosDbSqlApiSink",
+						"writeBehavior": "insert"
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "MDWDataLake_NYCImageMetadata_JSON",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "MDWCosmosDB_NYCImageMetadata",
+						"type": "DatasetReference"
+					}
+				]
 			}
 		],
 		"variables": {
