@@ -5,6 +5,9 @@
 			"referenceName": "MDWCosmosDB",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "Lab 04"
+		},
 		"annotations": [],
 		"type": "CosmosDbSqlApiCollection",
 		"typeProperties": {
