@@ -1,0 +1,17 @@
+{
+	"name": "MDWDataLake_NYCImageMetadata_JSON",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MDWDataLake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "nycimagemetadata"
+			}
+		}
+	}
+}
