@@ -7,9 +7,17 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "MDWDataFactory-53a5g"
 		},
+		"MDWCosmosDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MDWCosmosDB'"
+		},
 		"MDWDataLake_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MDWDataLake'"
+		},
+		"MDWDatabricks_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'MDWDatabricks'"
 		},
 		"MDWSQLServer_NYCDataSets_connectionString": {
 			"type": "secureString",
@@ -58,8 +66,14 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"MDWCosmosDB_connectionString": {
+						"value": "[parameters('MDWCosmosDB_connectionString')]"
+					},
 					"MDWDataLake_connectionString": {
 						"value": "[parameters('MDWDataLake_connectionString')]"
+					},
+					"MDWDatabricks_accessToken": {
+						"value": "[parameters('MDWDatabricks_accessToken')]"
 					},
 					"MDWSQLVirtualServer_MDWASQLDW_connectionString": {
 						"value": "[parameters('MDWSQLVirtualServer_MDWASQLDW_connectionString')]"
@@ -79,6 +93,26 @@
 				}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'ArmTemplate_0')]"
+			]
 		}
 	]
 }

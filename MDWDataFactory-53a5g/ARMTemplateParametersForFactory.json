@@ -5,7 +5,13 @@
 		"factoryName": {
 			"value": "MDWDataFactory-53a5g"
 		},
+		"MDWCosmosDB_connectionString": {
+			"value": ""
+		},
 		"MDWDataLake_connectionString": {
+			"value": ""
+		},
+		"MDWDatabricks_accessToken": {
 			"value": ""
 		},
 		"MDWSQLServer_NYCDataSets_connectionString": {

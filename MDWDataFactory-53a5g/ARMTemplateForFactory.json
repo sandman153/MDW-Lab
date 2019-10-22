@@ -7,9 +7,17 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "MDWDataFactory-53a5g"
 		},
+		"MDWCosmosDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MDWCosmosDB'"
+		},
 		"MDWDataLake_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'MDWDataLake'"
+		},
+		"MDWDatabricks_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'MDWDatabricks'"
 		},
 		"MDWSQLServer_NYCDataSets_connectionString": {
 			"type": "secureString",
@@ -98,6 +106,177 @@
 				"[concat(variables('factoryId'), '/datasets/NYCDataSets_MotorVehicleCollisions')]",
 				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_MotorVehicleCollisions')]",
 				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Lab 2 - Transform NYC Taxi Data')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy Taxi Data Files",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCTaxiData_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWDataLake_NYCTaxiData_Binary",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy Taxi Location Lookup",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.*"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"allowPolyBase": true,
+								"preCopyScript": "truncate table NYC.TaxiLocationLookup",
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								},
+								"disableMetricsCollection": false
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "MDWDataLake",
+									"type": "LinkedServiceReference"
+								},
+								"path": "polybase"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "MDWResources_NYCTaxiLookup_CSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MDWASQLDW_NYCTaxiLocationLookup",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Transform NYC Taxi Data",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Copy Taxi Data Files",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Copy Taxi Location Lookup",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "TransformNYCTaxiData",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"TaxiDataFiles": {},
+									"TaxiLocationLookup": {},
+									"TaxiDataSummary": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "MDWDataLake",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "polybase"
+							},
+							"integrationRuntime": {
+								"referenceName": "MappingDataFlowsIR",
+								"type": "IntegrationRuntimeReference"
+							}
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCTaxiData_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCTaxiData_Binary')]",
+				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCTaxiLookup_CSV')]",
+				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiLocationLookup')]",
+				"[concat(variables('factoryId'), '/dataflows/TransformNYCTaxiData')]",
+				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]",
+				"[concat(variables('factoryId'), '/integrationRuntimes/MappingDataFlowsIR')]"
 			]
 		},
 		{
@@ -388,6 +567,80 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/MDWCosmosDB_NYCImageMetadata')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MDWCosmosDB",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 04"
+				},
+				"annotations": [],
+				"type": "CosmosDbSqlApiCollection",
+				"typeProperties": {
+					"collectionName": "ImageMetadata"
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MDWCosmosDB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MDWDataLake_NYCImageMetadata_JSON')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MDWDataLake",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 04"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "nycimagemetadata"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MDWDataLake_NYCImages_Binary')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MDWDataLake",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 04"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "nycimages"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/MDWDataLake_NYCTaxiData_Binary')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -513,6 +766,31 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MDWResources_NYCImages_Binary')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "MDWResources",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Lab 04"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "nycimages"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/MDWResources')]"
 			]
 		},
 		{
@@ -741,6 +1019,19 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/MDWCosmosDB')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "CosmosDb",
+				"typeProperties": {
+					"connectionString": "[parameters('MDWCosmosDB_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/MDWDataLake')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -749,6 +1040,24 @@
 				"type": "AzureBlobStorage",
 				"typeProperties": {
 					"connectionString": "[parameters('MDWDataLake_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MDWDatabricks')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://australiaeast.azuredatabricks.net",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('MDWDatabricks_accessToken')]"
+					},
+					"existingClusterId": "1022-002044-faker275"
 				}
 			},
 			"dependsOn": []
@@ -888,177 +1197,6 @@
 				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCTaxiData_CSV')]",
 				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiLocationLookup')]",
 				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiDataSummary')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Lab 2 - Transform NYC Taxi Data')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Copy Taxi Data Files",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "BinarySource",
-								"storeSettings": {
-									"type": "AzureBlobStorageReadSettings",
-									"recursive": true
-								}
-							},
-							"sink": {
-								"type": "BinarySink",
-								"storeSettings": {
-									"type": "AzureBlobStorageWriteSettings",
-									"copyBehavior": "PreserveHierarchy"
-								}
-							},
-							"enableStaging": false
-						},
-						"inputs": [
-							{
-								"referenceName": "MDWResources_NYCTaxiData_Binary",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "MDWDataLake_NYCTaxiData_Binary",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					},
-					{
-						"name": "Copy Taxi Location Lookup",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "AzureBlobStorageReadSettings",
-									"recursive": true,
-									"wildcardFileName": "*.*"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "SqlDWSink",
-								"allowPolyBase": true,
-								"preCopyScript": "truncate table NYC.TaxiLocationLookup",
-								"polyBaseSettings": {
-									"rejectValue": 0,
-									"rejectType": "value",
-									"useTypeDefault": true
-								},
-								"disableMetricsCollection": false
-							},
-							"enableStaging": true,
-							"stagingSettings": {
-								"linkedServiceName": {
-									"referenceName": "MDWDataLake",
-									"type": "LinkedServiceReference"
-								},
-								"path": "polybase"
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "MDWResources_NYCTaxiLookup_CSV",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "MDWASQLDW_NYCTaxiLocationLookup",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					},
-					{
-						"name": "Transform NYC Taxi Data",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [
-							{
-								"activity": "Copy Taxi Data Files",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "Copy Taxi Location Lookup",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "TransformNYCTaxiData",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"TaxiDataFiles": {},
-									"TaxiLocationLookup": {},
-									"TaxiDataSummary": {}
-								}
-							},
-							"staging": {
-								"linkedService": {
-									"referenceName": "MDWDataLake",
-									"type": "LinkedServiceReference"
-								},
-								"folderPath": "polybase"
-							},
-							"integrationRuntime": {
-								"referenceName": "MappingDataFlowsIR",
-								"type": "IntegrationRuntimeReference"
-							}
-						}
-					}
-				],
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCTaxiData_Binary')]",
-				"[concat(variables('factoryId'), '/datasets/MDWDataLake_NYCTaxiData_Binary')]",
-				"[concat(variables('factoryId'), '/datasets/MDWResources_NYCTaxiLookup_CSV')]",
-				"[concat(variables('factoryId'), '/datasets/MDWASQLDW_NYCTaxiLocationLookup')]",
-				"[concat(variables('factoryId'), '/dataflows/TransformNYCTaxiData')]",
-				"[concat(variables('factoryId'), '/integrationRuntimes/MappingDataFlowsIR')]",
-				"[concat(variables('factoryId'), '/linkedServices/MDWDataLake')]"
 			]
 		}
 	]
