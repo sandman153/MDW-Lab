@@ -1,0 +1,14 @@
+{
+	"name": "MDWCosmosDB_NYCImageMetadata",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "MDWCosmosDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbSqlApiCollection",
+		"typeProperties": {
+			"collectionName": "ImageMetadata"
+		}
+	}
+}
