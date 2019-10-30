@@ -1,0 +1,22 @@
+SELECT
+    *
+FROM
+    MDWASQLDW.NYC.TaxiLocationLookup
+
+SELECT
+    *
+FROM
+    MDWASQLDW.NYC.TaxiDataSummary
+
+SELECT
+    *
+FROM
+    MDWASQLDW.NYC.NYPD_MotorVehicleCollisions
+
+-- 1,465,532	
+
+TRUNCATE TABLE MDWASQLDW.NYC.TaxiLocationLookup
+
+TRUNCATE TABLE MDWASQLDW.NYC.TaxiDataSummary
+
+TRUNCATE TABLE MDWASQLDW.NYC.NYPD_MotorVehicleCollisions
