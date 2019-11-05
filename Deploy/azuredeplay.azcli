@@ -1,9 +1,16 @@
-az login
+az login --tenant azuredatat.com
 
 az account set --subscription "AzureTraining"
 
 az group show -h-subscription
 
+az group create --name "MDW-Lab2"
+
 az group deployment create --subcription  "AzureTraining" --resource-group "MDW-Lab"  --template-file "F:\\Source Control\\MDW-Lab\\Deploy\\azuredeploy.json"
 
+az group deployment create --subcription  "AzureTraining" --resource-group "MDW-Lab2"  --template-file "F:\\Source Control\\MDW-Lab\\Deploy\\azuredeploy.json"
+
+az group delete --name adflab --yes
+
+az group delete --name MDW-Lab2 --yes
 
